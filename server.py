@@ -65,6 +65,8 @@ async def handle_conn(reader, writer):
         await handle_phone(reader, writer)
     elif conn_info['device'] == 'light':
         await handle_light(reader, writer)
+    else:
+        return
 
 async def start_server():
     server = await asyncio.start_server(handle_conn, HOST, PORT)
