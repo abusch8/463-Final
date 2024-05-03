@@ -1,4 +1,5 @@
 import asyncio
+import json
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
 from Crypto.Cipher import PKCS1_OAEP
@@ -8,10 +9,10 @@ from Crypto.Util import Counter
 HOST = 'localhost'
 PORT = 8080
 
-async def handle_conn(reader, writer):
-    peer_addr = writer.get_extra_info('peername')
+lights = []
 
-    print(f'Connected by {peer_addr}')
+async def handle_phone(reader, writer):
+    peer_addr = writer.get_extra_info('peername')
 
     aes_key = get_random_bytes(16)
     rsa_key = RSA.importKey(open('public.pem').read())
@@ -35,7 +36,35 @@ async def handle_conn(reader, writer):
 
         msg = aes.decrypt(cipher).decode()
 
+        for light in lights:
+            cipher = light['aes'].encrypt(msg.encode())
+            light['writer'].write(cipher)
+
         print(f'{peer_addr}: {msg}')
+
+async def handle_light(reader, writer):
+
+    nonce = get_random_bytes(8)
+    writer.write(nonce)
+
+    ctr = Counter.new(64, prefix=nonce, initial_value=1)
+    aes = AES.new(open('aes-128.key', 'rb').read(), AES.MODE_CTR, counter=ctr)
+
+    lights.append({ 'reader': reader, 'writer': writer, 'aes': aes })
+
+async def handle_conn(reader, writer):
+    peer_addr = writer.get_extra_info('peername')
+
+    header = await reader.read(1024)
+
+    conn_info = json.loads(header.decode())
+
+    print(f'Connected by {conn_info['device']} @ {peer_addr}')
+
+    if conn_info['device'] == 'phone':
+        await handle_phone(reader, writer)
+    elif conn_info['device'] == 'light':
+        await handle_light(reader, writer)
 
 async def start_server():
     server = await asyncio.start_server(handle_conn, HOST, PORT)
@@ -45,9 +74,12 @@ async def start_server():
 
     async with server: await server.serve_forever()
 
-if __name__ == '__main__':
+def main():
     try:
         asyncio.run(start_server())
     except KeyboardInterrupt:
         print('\nShutting down...')
         exit()
+
+if __name__ == '__main__':
+    main()
