@@ -1,8 +1,6 @@
 import asyncio
 import json
-from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
-from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Util import Counter
 
 HOST = 'localhost'
@@ -10,16 +8,22 @@ PORT = 8080
 
 class Color():
     RED     = chr(27) + '[31m'
+    GREEN   = chr(27) + '[32m'
     YELLOW  = chr(27) + '[33m'
     BLUE    = chr(27) + '[34m'
+    PURPLE  = chr(27) + '[35m'
+    CYAN    = chr(27) + '[36m'
     DEFAULT = chr(27) + '[39m'
 
     def enum(i: int) -> str:
         return {
             1: Color.RED,
-            2: Color.YELLOW,
-            3: Color.BLUE,
-            4: Color.DEFAULT,
+            2: Color.GREEN,
+            3: Color.YELLOW,
+            4: Color.BLUE,
+            5: Color.PURPLE,
+            6: Color.CYAN,
+            7: Color.DEFAULT,
         }[i]
 
 class Style():
@@ -78,7 +82,7 @@ async def start_client():
         if not cipher: break
 
         data = json.loads(aes.decrypt(cipher).decode())
-        option, color = data['option'], data['option']
+        option, color = data['option'], data['color']
 
         if option == 1:
             bulb.toggle_state()

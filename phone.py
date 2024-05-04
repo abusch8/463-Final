@@ -10,8 +10,12 @@ PORT = 8080
 
 class Color():
     RED     = chr(27) + '[31m'
+    GREEN   = chr(27) + '[32m'
     YELLOW  = chr(27) + '[33m'
     BLUE    = chr(27) + '[34m'
+    PURPLE  = chr(27) + '[35m'
+    CYAN    = chr(27) + '[36m'
+    DEFAULT = chr(27) + '[39m'
 
 class Style():
     RESET   = chr(27) + '[0m'
@@ -51,19 +55,18 @@ async def start_client():
             print(Style.CLEAR)
 
             print(f'1) {Color.RED}Red{Style.RESET}')
-            print(f'2) {Color.YELLOW}Yellow{Style.RESET}')
-            print(f'3) {Color.BLUE}Blue{Style.RESET}')
-            print('4) Default')
+            print(f'2) {Color.GREEN}Green{Style.RESET}')
+            print(f'3) {Color.YELLOW}Yellow{Style.RESET}')
+            print(f'4) {Color.BLUE}Blue{Style.RESET}')
+            print(f'5) {Color.PURPLE}Purple{Style.RESET}')
+            print(f'6) {Color.CYAN}Cyan{Style.RESET}')
+            print(f'7) {Color.DEFAULT}Default{Style.RESET}')
 
             color_option = int(input('>> '))
 
-            if color_option < 1 or color_option > 4: continue
+            if color_option < 1 or color_option > 7: continue
 
-        data = {
-            **conn_info,
-            'option':   option,
-            'color':    color_option,
-        }
+        data = { **conn_info, 'option': option, 'color': color_option }
 
         writer.write(aes.encrypt(json.dumps(data).encode()))
 
