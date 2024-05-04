@@ -43,21 +43,18 @@ async def handle_phone(reader, writer):
         print(f'{peer_addr}: {msg}')
 
 async def handle_light(reader, writer):
-
     nonce = get_random_bytes(8)
     writer.write(nonce)
 
     ctr = Counter.new(64, prefix=nonce, initial_value=1)
     aes = AES.new(open('aes-128.key', 'rb').read(), AES.MODE_CTR, counter=ctr)
 
-    lights.append({ 'writer': writer, 'aes': aes })
+    lights.append({ 'reader': reader, 'writer': writer, 'aes': aes })
 
 async def handle_conn(reader, writer):
     peer_addr = writer.get_extra_info('peername')
+    conn_info = json.loads((await reader.read(1024)).decode())
 
-    header = await reader.read(1024)
-
-    conn_info = json.loads(header.decode())
     device = conn_info['device']
 
     print(f'Connected by {device} @ {peer_addr}')
