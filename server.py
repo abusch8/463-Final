@@ -50,7 +50,7 @@ async def handle_light(reader, writer):
     ctr = Counter.new(64, prefix=nonce, initial_value=1)
     aes = AES.new(open('aes-128.key', 'rb').read(), AES.MODE_CTR, counter=ctr)
 
-    lights.append({ 'reader': reader, 'writer': writer, 'aes': aes })
+    lights.append({ 'writer': writer, 'aes': aes })
 
 async def handle_conn(reader, writer):
     peer_addr = writer.get_extra_info('peername')
@@ -58,12 +58,13 @@ async def handle_conn(reader, writer):
     header = await reader.read(1024)
 
     conn_info = json.loads(header.decode())
+    device = conn_info['device']
 
-    print(f'Connected by {conn_info['device']} @ {peer_addr}')
+    print(f'Connected by {device} @ {peer_addr}')
 
-    if conn_info['device'] == 'phone':
+    if device == 'phone':
         await handle_phone(reader, writer)
-    elif conn_info['device'] == 'light':
+    elif device == 'light':
         await handle_light(reader, writer)
     else:
         return

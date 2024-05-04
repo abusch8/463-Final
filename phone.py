@@ -60,14 +60,12 @@ async def start_client():
             if color_option < 1 or color_option > 4: continue
 
         data = {
-            'device':   'phone',
+            **conn_info,
             'option':   option,
             'color':    color_option,
         }
 
-        msg = json.dumps(data)
-        cipher = aes.encrypt(msg.encode())
-        writer.write(cipher)
+        writer.write(aes.encrypt(json.dumps(data).encode()))
 
 def main():
     try:
