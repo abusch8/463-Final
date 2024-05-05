@@ -29,7 +29,7 @@ class Color():
 class Style():
     RESET   = chr(27) + '[0m'
     BOLD    = chr(27) + '[1m'
-    CLEAR   = chr(27) + '[2J'
+    CLEAR   = chr(27) + '[2J' + chr(27) + '[H'
 
 class Bulb():
     def __init__(self):
@@ -61,12 +61,14 @@ class Bulb():
             """
            }{Style.RESET}""")
 
-async def start_client():
-    reader, writer = await asyncio.open_connection(HOST, PORT)
-
+async def handle_light(
+    reader: asyncio.StreamReader,
+    writer: asyncio.StreamWriter,
+):
     conn_info = { 'device': 'light' }
 
     writer.write(json.dumps(conn_info).encode())
+    await writer.drain()
 
     nonce = await reader.read(8)
 
@@ -79,7 +81,8 @@ async def start_client():
         bulb.print()
 
         cipher = await reader.read(1024)
-        if not cipher: break
+
+        if not cipher: raise ConnectionResetError
 
         data = json.loads(aes.decrypt(cipher).decode())
         option, color = data['option'], data['color']
@@ -88,15 +91,29 @@ async def start_client():
             bulb.toggle_state()
         elif option == 2:
             bulb.set_color(color)
+        elif option == 3:
+            raise ConnectionAbortedError
         else:
-            return
+            continue
+
+async def start_client():
+    writer = None
+    try:
+        reader, writer = await asyncio.open_connection(HOST, PORT)
+        await handle_light(reader, writer)
+    except ConnectionError as e:
+        print(f'{e.__class__.__name__} @ {HOST}:{PORT}')
+    finally:
+        if writer:
+            print('Disconnecting...')
+            writer.close()
+            await writer.wait_closed()
 
 def main():
     try:
         asyncio.run(start_client())
     except KeyboardInterrupt:
-        print('\nDisconnecting...')
-        exit()
+        return
 
 if __name__ == '__main__':
     main()
