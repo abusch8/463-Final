@@ -92,11 +92,13 @@ async def start_server():
         server = await asyncio.start_server(handle_conn, HOST, PORT)
         print(f'Socket server started @ {HOST}:{PORT}')
         async with server: await server.serve_forever()
-    except asyncio.CancelledError:
-        print('\nShutting down...')
+    except ConnectionError as e:
+        print(f'{e.__class__.__name__} @ {HOST}:{PORT}')
     finally:
-        server.close()
-        await server.wait_closed()
+        if server:
+            print('Shutting down...')
+            server.close()
+            await server.wait_closed()
 
 def main():
     try:
