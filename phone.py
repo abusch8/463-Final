@@ -53,9 +53,9 @@ async def handle_phone(
         except ValueError:
             continue
 
-        color_option = 0;
-
         if option < 1 or option > 3: continue
+
+        color_option = 0;
 
         if option == 2:
             print(Style.CLEAR)

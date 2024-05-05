@@ -93,8 +93,6 @@ async def handle_light(
             bulb.set_color(color)
         elif option == 3:
             raise ConnectionAbortedError
-        else:
-            continue
 
 async def start_client():
     writer = None
