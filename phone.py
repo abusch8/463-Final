@@ -4,6 +4,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Util import Counter
+from Crypto.Hash import SHA256
 
 HOST = 'localhost'
 PORT = 8080
@@ -30,13 +31,18 @@ async def handle_phone(
     writer.write(json.dumps(conn_info).encode())
     await writer.drain()
 
-    cipher = await reader.read(256)
-
     rsa_key = RSA.importKey(open('private.pem').read())
     rsa = PKCS1_OAEP.new(rsa_key)
-    aes_key = rsa.decrypt(cipher)
 
-    nonce = await reader.read(8)
+    msg = await reader.read(296)
+
+    aes_cipher = msg[:256]
+    aes_hash = msg[256:288]
+    nonce = msg[288:296]
+
+    aes_key = rsa.decrypt(aes_cipher)
+
+    if SHA256.new(data=aes_key).digest() != aes_hash: return
 
     ctr = Counter.new(64, prefix=nonce, initial_value=1)
     aes = AES.new(aes_key, AES.MODE_CTR, counter=ctr)
