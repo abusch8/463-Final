@@ -23,11 +23,11 @@ async def handle_phone(
 
     aes_key = get_random_bytes(16)
 
-    aes_cipher = rsa.encrypt(aes_key)
     aes_hash = SHA256.new(data=aes_key).digest()
+    aes_cipher = rsa.encrypt(aes_key)
     nonce = get_random_bytes(8)
 
-    msg = aes_cipher + aes_hash + nonce
+    msg = aes_hash + aes_cipher + nonce
 
     writer.write(msg)
     await writer.drain()
@@ -36,19 +36,26 @@ async def handle_phone(
     aes = AES.new(aes_key, AES.MODE_CTR, counter=ctr)
 
     while True:
-        cipher = await reader.read(1024)
+        msg = await reader.read(1024)
 
-        if not cipher: return
+        if not msg: return
 
-        msg = aes.decrypt(cipher).decode()
+        data_hash = msg[:32]
+        data_cipher = msg[32:]
+
+        data = aes.decrypt(data_cipher)
+
+        if SHA256.new(data=data).digest() != data_hash: return
 
         for light in lights:
-            cipher = light['aes'].encrypt(msg.encode())
+            data_cipher = light['aes'].encrypt(data)
 
-            light['writer'].write(cipher)
+            msg = data_hash + data_cipher
+
+            light['writer'].write(msg)
             await light['writer'].drain()
 
-        print(f'[{peer_addr[0]}:{peer_addr[1]}]: {msg}')
+        print(f'[{peer_addr[0]}:{peer_addr[1]}]: {data.decode()}')
 
 async def handle_light(
     reader: asyncio.StreamReader,

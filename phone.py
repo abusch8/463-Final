@@ -28,7 +28,9 @@ async def handle_phone(
 ):
     conn_info = { 'device': 'phone' }
 
-    writer.write(json.dumps(conn_info).encode())
+    msg = json.dumps(conn_info).encode()
+
+    writer.write(msg)
     await writer.drain()
 
     rsa_key = RSA.importKey(open('private.pem').read())
@@ -36,8 +38,8 @@ async def handle_phone(
 
     msg = await reader.read(296)
 
-    aes_cipher = msg[:256]
-    aes_hash = msg[256:288]
+    aes_hash = msg[:32]
+    aes_cipher = msg[32:288]
     nonce = msg[288:296]
 
     aes_key = rsa.decrypt(aes_cipher)
@@ -82,8 +84,14 @@ async def handle_phone(
             if color_option < 1 or color_option > 7: continue
 
         data = { **conn_info, 'option': option, 'color': color_option }
+        data = json.dumps(data).encode()
 
-        writer.write(aes.encrypt(json.dumps(data).encode()))
+        data_hash = SHA256.new(data=data).digest()
+        data_cipher = aes.encrypt(data)
+
+        msg = data_hash + data_cipher
+
+        writer.write(msg)
         await writer.drain()
 
 async def start_client():

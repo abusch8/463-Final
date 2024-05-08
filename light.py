@@ -2,6 +2,7 @@ import asyncio
 import json
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
+from Crypto.Hash import SHA256
 
 HOST = 'localhost'
 PORT = 8080
@@ -67,7 +68,9 @@ async def handle_light(
 ):
     conn_info = { 'device': 'light' }
 
-    writer.write(json.dumps(conn_info).encode())
+    msg = json.dumps(conn_info).encode()
+
+    writer.write(msg)
     await writer.drain()
 
     nonce = await reader.read(8)
@@ -80,11 +83,18 @@ async def handle_light(
     while True:
         bulb.print()
 
-        cipher = await reader.read(1024)
+        msg = await reader.read(1024)
 
-        if not cipher: raise ConnectionResetError
+        if not msg: raise ConnectionResetError
 
-        data = json.loads(aes.decrypt(cipher).decode())
+        data_hash = msg[:32]
+        data_cipher = msg[32:]
+
+        data = aes.decrypt(data_cipher)
+
+        if SHA256.new(data=data).digest() != data_hash: return
+
+        data = json.loads(data.decode())
         option, color = data['option'], data['color']
 
         if option == 1:
