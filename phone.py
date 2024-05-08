@@ -5,22 +5,10 @@ from Crypto.Cipher import AES
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Util import Counter
 from Crypto.Hash import SHA256
+from utils import Color, Style
 
 HOST = 'localhost'
 PORT = 8080
-
-class Color():
-    RED     = chr(27) + '[31m'
-    GREEN   = chr(27) + '[32m'
-    YELLOW  = chr(27) + '[33m'
-    BLUE    = chr(27) + '[34m'
-    PURPLE  = chr(27) + '[35m'
-    CYAN    = chr(27) + '[36m'
-    DEFAULT = chr(27) + '[39m'
-
-class Style():
-    RESET   = chr(27) + '[0m'
-    CLEAR   = chr(27) + '[2J' + chr(27) + '[H'
 
 async def handle_phone(
     reader: asyncio.StreamReader,
