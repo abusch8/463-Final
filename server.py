@@ -79,8 +79,10 @@ async def handle_conn(
     writer: asyncio.StreamWriter,
 ):
     peer_addr = writer.get_extra_info('peername')
-    conn_info = json.loads((await reader.read(1024)).decode())
 
+    msg = await reader.read(1024)
+
+    conn_info = json.loads(msg.decode())
     device = conn_info['device']
 
     print(f'Connected by {device} @ {peer_addr[0]}:{peer_addr[1]}')
